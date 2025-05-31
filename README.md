@@ -1,5 +1,5 @@
-# DateTime
+# Simulasi Perhitungan Tenaga Surya
 
 ## Deskripsi
 
-Website Jam Digital dengan fitur "Always On Screen" khusus versi Android. Buka [disini](https://archytech99.github.io/datetime)
+Perhitungan dasar keperluan untuk pemasangan Solar Panel dan kapasitas baterai yang diperlukan. Buka [disini](https://archytech99.github.io/solar_energy_calculator)
