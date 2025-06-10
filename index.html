@@ -97,9 +97,7 @@
 
   <form id="solarForm">
     <h3>Panel Surya</h3>
-    <label>Solar Panel Watt Peak (WP)</label>
-    <input type="number" id="solar_wp" value="100" step="any">
-
+    <hr>
     <label>Tegangan Panel (V)</label>
     <input type="number" id="solar_voltage" value="17.8" step="any">
 
@@ -107,9 +105,10 @@
     <input type="number" id="solar_current" value="5.62" step="any">
 
     <label>Durasi Penyinaran (jam)</label>
-    <input type="number" id="sun_hours" value="6" step="any">
+    <input type="number" id="sun_hours" value="1" step="any">
 
     <h3>Beban</h3>
+    <hr>
     <label>Tegangan Beban (V)</label>
     <input type="number" id="load_voltage" value="12" step="any">
 
@@ -117,20 +116,16 @@
     <input type="number" id="load_current" value="1" step="any">
 
     <label>Durasi Beban Aktif (jam)</label>
-    <input type="number" id="load_hours" value="12" step="any">
+    <input type="number" id="load_hours" value="6" step="any">
 
     <h3>Baterai</h3>
+    <hr>
     <label>Tegangan Baterai (V)</label>
     <input type="number" id="battery_voltage" value="12" step="any">
 
     <label>Kapasitas Baterai (Ah)</label>
-    <input type="number" id="battery_capacity_ah" value="25" step="any">
+    <input type="number" id="battery_capacity_ah" value="50" step="any">
 
-    <h3>Perhitungan Otomatis WP Panel</h3>
-    <label>Total Beban Harian (Wh)</label>
-    <input type="number" id="total_beban_wh" value="500" step="any">
-
-    <button type="button" onclick="hitungWP()">🔄 Hitung Kebutuhan Panel</button>
     <button type="button" onclick="hitung()">🔍 Hitung Simulasi</button>
   </form>
 
@@ -139,6 +134,10 @@
 
   <script>
     let chart = null;
+
+    function formatWattPeak(wp) {
+      return Math.round(wp) + " WP";
+    }
 
     function formatEnergy(wh) {
       return wh >= 1000 ? (wh / 1000).toFixed(2) + " kWh" : Math.round(wh) + " Wh";
@@ -160,32 +159,30 @@
     }
 
     function hitung() {
-      const solar_wp = parseFloat(document.getElementById("solar_wp").value);
+      const system_efficiency = 0.75;
       const solar_voltage = parseFloat(document.getElementById("solar_voltage").value);
       const solar_current = parseFloat(document.getElementById("solar_current").value);
       const sun_hours = parseFloat(document.getElementById("sun_hours").value);
+      const solar_energy_wh = ((solar_voltage * solar_current) * sun_hours) * system_efficiency;
 
       const load_voltage = parseFloat(document.getElementById("load_voltage").value);
       const load_current = parseFloat(document.getElementById("load_current").value);
       const load_hours = parseFloat(document.getElementById("load_hours").value);
-
-      const battery_voltage = parseFloat(document.getElementById("battery_voltage").value);
-      const battery_capacity_ah = parseFloat(document.getElementById("battery_capacity_ah").value);
-
-      const system_efficiency = 0.75;
-      const battery_efficiency = 0.85;
-
-      const solar_energy_wh = (solar_voltage * solar_current) * sun_hours * system_efficiency;
       const load_power_w = load_voltage * load_current;
       const load_energy_wh = load_power_w * load_hours;
-      const battery_capacity_wh = battery_voltage * battery_capacity_ah;
-      const battery_charge_time = battery_capacity_wh / (solar_wp * system_efficiency * battery_efficiency);
 
-      const total_kebutuhan = load_energy_wh + (battery_capacity_wh / battery_efficiency);
+      const battery_efficiency = 0.6;
+      const battery_voltage = parseFloat(document.getElementById("battery_voltage").value);
+      const battery_capacity_ah = parseFloat(document.getElementById("battery_capacity_ah").value);
+      const battery_capacity_wh = (battery_voltage * battery_capacity_ah);
+      const battery_charge_time = (battery_voltage * battery_capacity_ah) / solar_energy_wh;
+
+      const total_kebutuhan = battery_capacity_wh;
       const cukup = solar_energy_wh >= total_kebutuhan;
 
       document.getElementById("output").innerHTML = `
         <h3>📊 Hasil Perhitungan:</h3>
+        <p><b>Solar Panel Watt Peak:</b> ${formatWattPeak((solar_voltage * solar_current) * sun_hours)}</p>
         <p><b>Energi Panel Surya (efisiensi):</b> ${formatEnergy(solar_energy_wh)}</p>
         <p><b>Energi Beban:</b> ${formatEnergy(load_energy_wh)}</p>
         <p><b>Kapasitas Baterai:</b> ${formatEnergy(battery_capacity_wh)}</p>
@@ -193,13 +190,11 @@
         <p class="${cukup ? 'success' : 'error'}">${cukup ? '✅ Energi CUKUP' : '⚠️ Energi TIDAK cukup'}</p>
       `;
 
-	  // Destroy Chart
-	  if (chart) {
-	    chart.destroy();
-	    chart = null;
-	  }
+      if (chart) {
+        chart.destroy();
+        chart = null;
+      }
 
-      // Update Chart
       const ctx = document.getElementById('energyChart').getContext('2d');
       const data = {
         labels: ['Panel Surya', 'Beban', 'Baterai'],
